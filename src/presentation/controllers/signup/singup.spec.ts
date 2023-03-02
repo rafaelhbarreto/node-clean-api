@@ -215,4 +215,20 @@ describe('SingupController tests', () => {
     expect(httpResponse.statusCode).toBe(500)
     expect(httpResponse.body).toEqual(new ServerError())
   })
+
+  it('should returns a 200 status code when create an account', () => {
+    const { sut } = SutFactory()
+
+    const httpRequest = {
+      body: {
+        name: 'any name',
+        email: 'any_email@mail.com',
+        password: 'any_pass',
+        password_confirmation: 'any_pass'
+      }
+    }
+
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(201)
+  })
 })
