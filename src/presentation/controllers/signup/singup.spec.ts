@@ -1,7 +1,5 @@
-import { Account } from '@/domain/models/account'
-import { AddAccount, CreateAccount } from '@/domain/usecases/create-account'
-import { MissingParamError, ServerError, InvalidParamError } from '../errors'
-import { EmailValidator } from '../protocols'
+import { MissingParamError, ServerError, InvalidParamError } from '../../errors'
+import { EmailValidator, AddAccount, CreateAccount, Account } from './signup-protocols'
 import { SingupController } from './singup'
 
 const emailValidatorStubFactory = (): EmailValidator => {
@@ -196,5 +194,25 @@ describe('SingupController tests', () => {
       email: 'any_email@mail.com',
       password: 'any_pass'
     })
+  })
+
+  it('should returns a 500 status code when the addAccountUseCase throws an exception', () => {
+    const { sut, addAccountStub } = SutFactory()
+    jest.spyOn(addAccountStub, 'handle').mockImplementation(() => {
+      throw new Error()
+    })
+
+    const httpRequest = {
+      body: {
+        name: 'any name',
+        email: 'any_email@mail.com',
+        password: 'any_pass',
+        password_confirmation: 'any_pass'
+      }
+    }
+
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 })
