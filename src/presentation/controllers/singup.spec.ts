@@ -1,21 +1,34 @@
-import { MissingParamError } from '../errors/missing-param'
+import { MissingParamError, ServerError, InvalidParamError } from '../errors'
+import { EmailValidator } from '../protocols'
 import { SingupController } from './singup'
-import { EmailValidator } from '../protocols/emailValidator'
-import { InvalidParamError } from '../errors/invalid-param-error'
 
 interface stubTypes {
   sut: SingupController
   emailValidatorStub: EmailValidator
 }
 
-const SutFactory = (): stubTypes => {
+const emailValidatorStubFactoryWithError = (): EmailValidator => {
+  class EmailValidatorStub implements EmailValidator {
+    isValid (email: string): boolean {
+      throw new Error()
+    }
+  }
+
+  return new EmailValidatorStub()
+}
+
+const emailValidatorStubFactory = (): EmailValidator => {
   class EmailValidatorStub implements EmailValidator {
     isValid (email: string): boolean {
       return true
     }
   }
 
-  const emailValidatorStub = new EmailValidatorStub()
+  return new EmailValidatorStub()
+}
+
+const SutFactory = (): stubTypes => {
+  const emailValidatorStub = emailValidatorStubFactory()
   const sut = new SingupController(emailValidatorStub)
 
   return {
@@ -100,5 +113,40 @@ describe('SingupController tests', () => {
     expect(httpResponse.statusCode).toBe(400)
     expect(httpResponse.body).toEqual(new InvalidParamError('email'))
     expect(emailValidatorSpy).toBeCalled()
+  })
+
+  it('should ensure that the isValid function is called with the correct param', () => {
+    const { sut, emailValidatorStub } = SutFactory()
+    const emailValidatorSpy = jest.spyOn(emailValidatorStub, 'isValid')
+
+    const httpRequest = {
+      body: {
+        name: 'any name',
+        email: 'any_email@mail.com',
+        password: 'any_pass',
+        password_confirmation: 'any_pass'
+      }
+    }
+
+    sut.handle(httpRequest)
+    expect(emailValidatorSpy).toHaveBeenCalledWith('any_email@mail.com')
+  })
+
+  it('should returns a 500 status code when the EmailValidator throws an exception', () => {
+    const emailValidatorStub = emailValidatorStubFactoryWithError()
+    const sut = new SingupController(emailValidatorStub)
+
+    const httpRequest = {
+      body: {
+        name: 'any name',
+        email: 'any_email@mail.com',
+        password: 'any_pass',
+        password_confirmation: 'any_pass'
+      }
+    }
+
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 })
