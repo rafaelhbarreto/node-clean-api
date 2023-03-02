@@ -7,16 +7,6 @@ interface stubTypes {
   emailValidatorStub: EmailValidator
 }
 
-const emailValidatorStubFactoryWithError = (): EmailValidator => {
-  class EmailValidatorStub implements EmailValidator {
-    isValid (email: string): boolean {
-      throw new Error()
-    }
-  }
-
-  return new EmailValidatorStub()
-}
-
 const emailValidatorStubFactory = (): EmailValidator => {
   class EmailValidatorStub implements EmailValidator {
     isValid (email: string): boolean {
@@ -95,6 +85,22 @@ describe('SingupController tests', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('password_confirmation'))
   })
 
+  it('should return 400 if the password_confirmation and password are diferent', () => {
+    const { sut } = SutFactory()
+    const httpRequest = {
+      body: {
+        name: 'any name',
+        email: 'any_email@mail.com',
+        password: 'any_pass',
+        password_confirmation: 'invalid'
+      }
+    }
+
+    const httpResponse = sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new InvalidParamError('password_confirmation'))
+  })
+
   it('should return 400 if the given e-mail is incorrect', () => {
     const { sut, emailValidatorStub } = SutFactory()
     const emailValidatorSpy = jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
@@ -133,8 +139,10 @@ describe('SingupController tests', () => {
   })
 
   it('should returns a 500 status code when the EmailValidator throws an exception', () => {
-    const emailValidatorStub = emailValidatorStubFactoryWithError()
-    const sut = new SingupController(emailValidatorStub)
+    const { sut, emailValidatorStub } = SutFactory()
+    jest.spyOn(emailValidatorStub, 'isValid').mockImplementation(() => {
+      throw new Error()
+    })
 
     const httpRequest = {
       body: {
