@@ -7,5 +7,5 @@ export interface AddAccount {
 }
 
 export interface CreateAccount {
-  handle(account: AddAccount): Account
+  handle(account: AddAccount): Promise<Account>
 }
