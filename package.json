@@ -23,6 +23,7 @@
     "@types/jest": "^29.4.0",
     "@types/module-alias": "^2.0.1",
     "@types/node": "^18.14.0",
+    "@types/validator": "^13.7.13",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "eslint": "^8.0.1",
     "eslint-config-standard-with-typescript": "^11.0.1",
@@ -40,6 +41,7 @@
   },
   "dependencies": {
     "module-alias": "^2.2.2",
-    "rimraf": "^4.1.2"
+    "rimraf": "^4.1.2",
+    "validator": "^13.9.0"
   }
 }
